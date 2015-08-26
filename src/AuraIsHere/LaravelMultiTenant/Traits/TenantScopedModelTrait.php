@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  */
 trait TenantScopedModelTrait
 {
+    public static $enabled = true;
+
     public static function bootTenantScopedModelTrait()
     {
         $tenantScope = app('AuraIsHere\LaravelMultiTenant\TenantScope');
@@ -25,7 +27,10 @@ trait TenantScopedModelTrait
 
         // Add an observer that will automatically add the tenant id when create()-ing
         static::creating(function (Model $model) use ($tenantScope) {
-            $tenantScope->creating($model);
+            // Only do it if enabled
+            if ($model::$enabled) {
+                $tenantScope->creating($model);
+            }
         });
     }
 
@@ -81,5 +86,29 @@ trait TenantScopedModelTrait
         } catch (ModelNotFoundException $e) {
             throw with(new TenantModelNotFoundException())->setModel(get_called_class());
         }
+    }
+
+    /**
+     * Disables the scope.
+     *
+     * @return void
+     */
+    public static function disableTenantScope()
+    {
+        self::$enabled = false;
+
+        return new static;
+    }
+
+    /**
+     * Enables the scope.
+     *
+     * @return void
+     */
+    public static function enabledTenantScope()
+    {
+        self::$enabled = true;
+
+        return new static;
     }
 }
